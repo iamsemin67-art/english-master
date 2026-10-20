@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>영어 지문 암기 트레이너 (중1 맞춤)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        /* Touch interactive blank tile styling */
+        .blank-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.2rem 0.6rem;
+            margin: 0.15rem 0.2rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            user-select: none;
+        }
+        .blank-btn.hidden-word {
+            background-color: #eef2ff;
+            border: 2px dashed #6366f1;
+            color: #4f46e5;
+            min-width: 3rem;
+            box-shadow: 0 1px 2px rgba(99, 102, 241, 0.1);
+        }
+        .blank-btn.hidden-word:active {
+            transform: scale(0.94);
+            background-color: #e0e7ff;
+        }
+        .blank-btn.revealed-word {
+            background-color: #ecfdf5;
+            border: 2px solid #10b981;
+            color: #047857;
+            animation: popIn 0.25s ease-out forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0.5; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-20 md:pb-6 selection:bg-indigo-100">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-amber-300">
+                    <i class="fa-solid fa-graduation-cap text-lg"></i>
+                </div>
+                <h1 class="text-base sm:text-lg font-bold tracking-tight">지문 암기 Master</h1>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button id="nav-practice-btn" class="px-3 py-1.5 rounded-lg bg-indigo-700 font-medium text-xs sm:text-sm transition flex items-center gap-1">
+                    <i class="fa-solid fa-pen-to-square"></i> <span class="hidden sm:inline">암기</span> 연습
+                </button>
+                <button id="nav-manage-btn" class="px-3 py-1.5 rounded-lg bg-indigo-500/80 hover:bg-indigo-500 font-medium text-xs sm:text-sm transition flex items-center gap-1">
+                    <i class="fa-solid fa-folder-plus"></i> <span class="hidden sm:inline">지문</span> 관리
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 py-4 flex-grow w-full">
+        
+        <!-- Practice View -->
+        <section id="practice-view" class="space-y-4">
+            <!-- Top Controls Card -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+                <div class="flex flex-col gap-2">
+                    <label for="text-select" class="block text-xs font-bold text-slate-400 uppercase tracking-wider">학습 지문 선택</label>
+                    <select id="text-select" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm">
+                        <!-- Dynamic Options -->
+                    </select>
+                </div>
+
+                <!-- Step Selector -->
+                <div>
+                    <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">학습 단계</span>
+                    <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                        <button id="step-1-btn" class="step-tab-btn py-2 px-1 rounded-lg text-xs font-bold transition text-center bg-white text-indigo-600 shadow-sm">
+                            1단계: 읽기/듣기
+                        </button>
+                        <button id="step-2-btn" class="step-tab-btn py-2 px-1 rounded-lg text-xs font-bold transition text-center text-slate-600 hover:text-indigo-600">
+                            2단계: 핵심 단어
+                        </button>
+                        <button id="step-3-btn" class="step-tab-btn py-2 px-1 rounded-lg text-xs font-bold transition text-center text-slate-600 hover:text-indigo-600">
+                            3단계: 구문/표현
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score / Performance Dashboard -->
+            <div id="stats-dashboard" class="grid grid-cols-3 gap-2.5">
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase">전체 빈칸</p>
+                        <p id="total-blanks" class="text-xl sm:text-2xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase">열린 빈칸</p>
+                        <p id="correct-count" class="text-xl sm:text-2xl font-black text-emerald-600">0</p>
+                    </div>
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs text-slate-400 font-bold uppercase">달성도</p>
+                        <p id="accuracy-rate" class="text-xl sm:text-2xl font-black text-indigo-600">0%</p>
+                    </div>
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area with Audio & Toolbar -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 space-y-4">
+                <!-- Audio Toolbar -->
+                <div class="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <button id="tts-play-btn" class="px-3.5 py-2 bg-emerald-500 active:bg-emerald-600 text-white rounded-xl font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-volume-high"></i> <span>전체 지문 듣기</span>
+                        </button>
+                        <button id="tts-stop-btn" class="px-3 py-2 bg-slate-200 active:bg-slate-300 text-slate-700 rounded-xl text-xs sm:text-sm font-bold transition hidden">
+                            <i class="fa-solid fa-stop"></i> 정지
+                        </button>
+                    </div>
+
+                    <div id="step-hint-badge" class="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                        <i class="fa-solid fa-hand-pointer text-indigo-500 animate-bounce"></i> 빈칸을 터치하면 단어가 열립니다!
+                    </div>
+                </div>
+
+                <!-- Text Container with Interactive Blank Buttons and Translations -->
+                <div id="passage-container" class="space-y-3 sm:space-y-4 text-base sm:text-lg">
+                    <!-- Dynamic Passage Content -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Manage Texts View -->
+        <section id="manage-view" class="hidden space-y-4">
+            <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 space-y-4">
+                <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-file-circle-plus text-indigo-600"></i> 새 지문 등록하기
+                </h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="new-title" class="block text-xs font-bold text-slate-400 uppercase mb-1">지문 제목</label>
+                        <input type="text" id="new-title" placeholder="예: August 16th - Tongyeong Trip" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="new-text" class="block text-xs font-bold text-slate-400 uppercase mb-1">영어 지문 (줄바꿈 = 문장 구분)</label>
+                        <textarea id="new-text" rows="5" placeholder="영어 본문을 입력하세요..." class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    </div>
+                    <div>
+                        <label for="new-ko" class="block text-xs font-bold text-slate-400 uppercase mb-1">한글 해석 (영어 문장 순서와 동일하게 줄바꿈)</label>
+                        <textarea id="new-ko" rows="5" placeholder="한글 번역을 입력하세요..." class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    </div>
+                    <button id="save-text-btn" class="w-full py-3 bg-indigo-600 active:bg-indigo-700 text-white font-bold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-save"></i> 지문 저장하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- Saved Passages List -->
+            <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200/80 space-y-3">
+                <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-list text-indigo-600"></i> 저장된 지문 목록
+                </h2>
+                <div id="saved-list" class="divide-y divide-slate-100">
+                    <!-- Dynamic Saved Passages -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile Sticky Action Bar for quick actions -->
+    <div id="mobile-action-bar" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 z-30 shadow-lg flex items-center justify-between gap-2 max-w-4xl mx-auto">
+        <button id="reveal-all-btn" class="flex-1 py-2.5 bg-indigo-600 active:bg-indigo-700 text-white rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-md">
+            <i class="fa-solid fa-eye"></i> 전체 단어 모두 열기
+        </button>
+        <button id="reset-blanks-btn" class="flex-1 py-2.5 bg-slate-100 active:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-rotate-right"></i> 다시 가리기
+        </button>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-16 sm:bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-xl opacity-0 translate-y-10 transition-all duration-300 flex items-center gap-2.5 text-xs sm:text-sm z-50 pointer-events-none max-w-[90vw] text-center">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-indigo-400 text-base"></i>
+        <span id="toast-message">알림 메세지</span>
+    </div>
+
+    <script>
+        // Core Passages Dataset (Tongyeong Travel Journal)
+        const defaultPassages = [
+            {
+                id: 'tongyeong-1',
+                title: '통영 여행 - August 16th',
+                text: `August 16th
+I got up at six in the morning.
+It was the first day of my family trip to Tongyeong.
+I was excited!
+We arrived at Jungang Market at 1 p.m.
+There we had Chungmu gimbap for lunch.
+There was only rice inside the roll!
+Dad said, "Try the roll with radish and squid."
+"Long ago, fishermen had Chungmu gimbap out at sea."
+It was a bit spicy but tasty.
+Chungmu is Tongyeong's old name.
+In the afternoon, we went to Yi Sun-sin Park.
+There was a huge statue of Admiral Yi.
+I imagined the great battle right off the coast of Tongyeong.
+Then we enjoyed taking a walk along the coast.
+The sunset was beautiful.
+I closed my eyes.
+I could feel Admiral Yi's love for the country.
+Everything was really peaceful.`,
+                ko: `8월 16일
+나는 아침 6시에 일어났다.
+우리 가족의 통영 여행 첫날이었다.
+나는 매우 신났다!
+우리는 오후 1시에 중앙시장에 도착했다.
+거기서 점심으로 충무김밥을 먹었다.
+김밥 안에 밥만 들어있었다!
+아빠가 "무와 오징어가 든 김밥을 먹어보렴."하고 말씀하셨다.
+"오래전에 어부들은 바다 나가서 충무김밥을 먹었단다."
+조금 매웠지만 맛있었다.
+충무는 통영의 옛 이름이다.
+오후에 우리는 이순신 공원에 갔다.
+거기에는 이순신 장군의 거대한 동상이 있었다.
+나는 통영 바다 바로 앞의 위대한 해전을 상상했다.
+그리고 나서 우리는 해안을 따라 산책을 즐겼다.
+노을이 아름다웠다.
+나는 눈을 감았다.
+이순신 장군님의 나라 사랑을 느낄 수 있었다.
+모든 것이 정말 평화로웠다.`
+            },
+            {
+                id: 'tongyeong-2',
+                title: '통영 여행 - August 17th',
+                text: `August 17th
+Early in the morning, we went to Dongpirang.
+There were many pretty paintings on the walls.
+It was the best place for taking pictures!
+Mom and I took hundreds of pictures.
+Finally, my dad said, "Please stop! No more pictures!"
+'Dong' means 'east,' and 'pirang' means 'cliff.'
+There is also Seopirang.
+Next, we went to the Jeon Hyuck-lim Museum of Art.
+The painter's nickname is 'The Magician of Color.'
+He painted the sea of Tongyeong with various blue colors.
+I enjoyed his paintings very much.
+What a great experience!
+Going on a family trip is always fun.
+Tongyeong, bye for now!
+See you next time!`,
+                ko: `8월 17일
+아침 일찍 우리는 동피랑에 갔다.
+벽에 예쁜 그림들이 많이 있었다.
+사진 찍기에 최적의 장소였다!
+엄마와 나는 수백 장의 사진을 찍었다.
+마침내 아빠가 "제발 그만! 사진 그만 찍자!"라고 말씀하셨다.
+'동'은 '동쪽'을 의미하고, '피랑'은 '낭떠러지'를 의미한다.
+서피랑도 있다.
+다음으로 우리는 전혁림 미술관에 갔다.
+그 화가의 별명은 '색채의 마술사'이다.
+그는 다양한 푸른색으로 통영의 바다를 그렸다.
+나는 그의 그림을 매우 즐겁게 감상했다.
+얼마나 멋진 경험인가!
+가족 여행을 떠나는 것은 언제나 즐겁다.
+통영, 안녕!
+다음에 또 봐!`
+            }
+        ];
+
+        // App State
+        let passages = JSON.parse(localStorage.getItem('passages_v4')) || defaultPassages;
+        let currentPassageId = passages[0]?.id || '';
+        let currentStep = 1; // 1: Read/Listen, 2: Core Words (~15-20%), 3: Phrases & Words (~35-40%)
+        let currentBlanks = [];
+
+        // Easy structural stop words filter for Step 2
+        const easyStopwords = new Set([
+            'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'was', 'are', 'were', 'it', 'i', 'we', 'he', 'she', 'they', 'my', 'his', 'her'
+        ]);
+
+        // DOM Elements
+        const practiceView = document.getElementById('practice-view');
+        const manageView = document.getElementById('manage-view');
+        const navPracticeBtn = document.getElementById('nav-practice-btn');
+        const navManageBtn = document.getElementById('nav-manage-btn');
+
+        const textSelect = document.getElementById('text-select');
+        const step1Btn = document.getElementById('step-1-btn');
+        const step2Btn = document.getElementById('step-2-btn');
+        const step3Btn = document.getElementById('step-3-btn');
+        const statsDashboard = document.getElementById('stats-dashboard');
+        const mobileActionBar = document.getElementById('mobile-action-bar');
+        const stepHintBadge = document.getElementById('step-hint-badge');
+
+        const passageContainer = document.getElementById('passage-container');
+
+        const totalBlanksEl = document.getElementById('total-blanks');
+        const correctCountEl = document.getElementById('correct-count');
+        const accuracyRateEl = document.getElementById('accuracy-rate');
+
+        const ttsPlayBtn = document.getElementById('tts-play-btn');
+        const ttsStopBtn = document.getElementById('tts-stop-btn');
+        const revealAllBtn = document.getElementById('reveal-all-btn');
+        const resetBlanksBtn = document.getElementById('reset-blanks-btn');
+
+        const newTitleInput = document.getElementById('new-title');
+        const newTextInput = document.getElementById('new-text');
+        const newKoInput = document.getElementById('new-ko');
+        const saveTextBtn = document.getElementById('save-text-btn');
+        const savedList = document.getElementById('saved-list');
+
+        function init() {
+            populateTextSelect();
+            setStep(1);
+            renderSavedList();
+            setupEventListeners();
+        }
+
+        function setStep(step) {
+            currentStep = step;
+            [step1Btn, step2Btn, step3Btn].forEach((btn, idx) => {
+                if (idx + 1 === step) {
+                    btn.className = "step-tab-btn py-2 px-1 rounded-lg text-xs font-bold transition text-center bg-white text-indigo-600 shadow-sm";
+                } else {
+                    btn.className = "step-tab-btn py-2 px-1 rounded-lg text-xs font-bold transition text-center text-slate-600 hover:text-indigo-600";
+                }
+            });
+
+            if (currentStep === 1) {
+                statsDashboard.classList.add('hidden');
+                mobileActionBar.classList.add('hidden');
+                stepHintBadge.classList.add('hidden');
+            } else {
+                statsDashboard.classList.remove('hidden');
+                mobileActionBar.classList.remove('hidden');
+                stepHintBadge.classList.remove('hidden');
+            }
+
+            renderStepUI();
+        }
+
+        function renderStepUI() {
+            const passage = passages.find(p => p.id === currentPassageId);
+            if (!passage) return;
+
+            stopTTS();
+            passageContainer.innerHTML = '';
+            currentBlanks = [];
+
+            const enLines = passage.text.split('\n').filter(l => l.trim() !== '');
+            const koLines = passage.ko ? passage.ko.split('\n').filter(l => l.trim() !== '') : [];
+
+            enLines.forEach((lineText, lineIdx) => {
+                const koText = koLines[lineIdx] || '';
+                
+                const lineCard = document.createElement('div');
+                lineCard.className = "p-3.5 sm:p-4 rounded-xl bg-slate-50/90 border border-slate-200/90 hover:border-indigo-200 transition space-y-2";
+
+                const mainLineFlex = document.createElement('div');
+                mainLineFlex.className = "flex items-start justify-between gap-2";
+
+                const enContainer = document.createElement('div');
+                enContainer.className = "leading-relaxed flex flex-wrap items-center gap-x-1 gap-y-1.5 font-medium text-slate-800 text-sm sm:text-base flex-grow";
+
+                const lineBlanks = [];
+                const targetRatio = currentStep === 2 ? 0.20 : 0.38;
+                const tokens = lineText.match(/[\w']+|[^\w\s]|\s+/g) || [];
+
+                tokens.forEach((token) => {
+                    const cleanWord = token.replace(/[^a-zA-Z]/g, '');
+                    const isWord = cleanWord.length > 0;
+
+                    let makeBlank = false;
+                    if (currentStep > 1 && isWord) {
+                        if (currentStep === 2) {
+                            if (cleanWord.length >= 3 && !easyStopwords.has(cleanWord.toLowerCase())) {
+                                makeBlank = Math.random() < targetRatio;
+                            }
+                        } else if (currentStep === 3) {
+                            if (cleanWord.length >= 2) {
+                                makeBlank = Math.random() < targetRatio;
+                            }
+                        }
+                    }
+
+                    if (makeBlank) {
+                        const leadingPunct = token.match(/^[^a-zA-Z]+/)?.[0] || '';
+                        const trailingPunct = token.match(/[^a-zA-Z]+$/)?.[0] || '';
+                        const wordOnly = token.substring(leadingPunct.length, token.length - trailingPunct.length);
+
+                        if (leadingPunct) {
+                            const span = document.createElement('span');
+                            span.textContent = leadingPunct;
+                            enContainer.appendChild(span);
+                        }
+
+                        // Touch button tile for blank word
+                        const blankBtn = document.createElement('button');
+                        blankBtn.type = 'button';
+                        blankBtn.className = 'blank-btn hidden-word';
+                        blankBtn.innerHTML = `<i class="fa-solid fa-question text-xs opacity-70"></i>`;
+                        blankBtn.title = "터치하여 단어 보기";
+
+                        const blankData = {
+                            element: blankBtn,
+                            word: wordOnly,
+                            isRevealed: false,
+                            lineIdx: lineIdx
+                        };
+
+                        blankBtn.addEventListener('click', () => {
+                            if (!blankData.isRevealed) {
+                                revealBlank(blankData);
+                                updateLineKoreanDisplay(lineCard, lineBlanks, koText);
+                                updateStats();
+                            }
+                        });
+
+                        currentBlanks.push(blankData);
+                        lineBlanks.push(blankData);
+                        enContainer.appendChild(blankBtn);
+
+                        if (trailingPunct) {
+                            const span = document.createElement('span');
+                            span.textContent = trailingPunct;
+                            enContainer.appendChild(span);
+                        }
+                    } else {
+                        const span = document.createElement('span');
+                        span.textContent = token;
+                        enContainer.appendChild(span);
+                    }
+                });
+
+                // Sentence TTS Speaker Button
+                const speakerBtn = document.createElement('button');
+                speakerBtn.className = "text-slate-400 hover:text-indigo-600 active:scale-95 transition text-base sm:text-lg p-1.5 flex-shrink-0 rounded-lg hover:bg-indigo-50";
+                speakerBtn.title = "이 문장 듣기";
+                speakerBtn.innerHTML = `<i class="fa-solid fa-volume-low"></i>`;
+                speakerBtn.addEventListener('click', () => playTTS(lineText));
+
+                mainLineFlex.appendChild(enContainer);
+                mainLineFlex.appendChild(speakerBtn);
+                lineCard.appendChild(mainLineFlex);
+
+                // Korean Translation Row
+                if (koText) {
+                    const koDiv = document.createElement('div');
+                    koDiv.className = "ko-translation-row text-xs sm:text-sm pt-2 border-t border-slate-200/60 flex items-start gap-1.5 text-slate-600 font-normal";
+                    lineCard.appendChild(koDiv);
+                    
+                    updateLineKoreanDisplay(lineCard, lineBlanks, koText);
+                }
+
+                passageContainer.appendChild(lineCard);
+            });
+
+            updateStats();
+        }
+
+        function revealBlank(blankData) {
+            blankData.isRevealed = true;
+            blankData.element.className = 'blank-btn revealed-word';
+            blankData.element.textContent = blankData.word;
+        }
+
+        function updateLineKoreanDisplay(lineCard, lineBlanks, koText) {
+            const koDiv = lineCard.querySelector('.ko-translation-row');
+            if (!koDiv) return;
+
+            if (currentStep === 1) {
+                koDiv.innerHTML = `<i class="fa-solid fa-language text-indigo-500 mt-0.5 flex-shrink-0"></i> <span>${koText}</span>`;
+            } else {
+                const totalInLine = lineBlanks.length;
+                const revealedInLine = lineBlanks.filter(b => b.isRevealed).length;
+
+                if (totalInLine === 0 || revealedInLine === totalInLine) {
+                    koDiv.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500 mt-0.5 flex-shrink-0"></i> <span class="text-slate-700 font-semibold">${koText}</span>`;
+                } else {
+                    koDiv.innerHTML = `<i class="fa-solid fa-lock text-amber-500 mt-0.5 flex-shrink-0"></i> <span class="text-slate-400 italic">🔒 문장의 빈칸 단어를 모두 터치하면 해석이 열립니다! (${revealedInLine}/${totalInLine})</span>`;
+                }
+            }
+        }
+
+        function revealAllBlanks() {
+            currentBlanks.forEach(blank => revealBlank(blank));
+
+            const passage = passages.find(p => p.id === currentPassageId);
+            if (passage) {
+                const lineCards = passageContainer.children;
+                const koLines = passage.ko ? passage.ko.split('\n').filter(l => l.trim() !== '') : [];
+                
+                Array.from(lineCards).forEach((card, idx) => {
+                    const lineBlanks = currentBlanks.filter(b => b.lineIdx === idx);
+                    updateLineKoreanDisplay(card, lineBlanks, koLines[idx] || '');
+                });
+            }
+
+            updateStats();
+            showToast("모든 빈칸의 단어가 나타났습니다!", "success");
+        }
+
+        function updateStats() {
+            const total = currentBlanks.length;
+            const revealed = currentBlanks.filter(b => b.isRevealed).length;
+            const accuracy = total ? Math.round((revealed / total) * 100) : 0;
+
+            totalBlanksEl.textContent = total;
+            correctCountEl.textContent = revealed;
+            accuracyRateEl.textContent = `${accuracy}%`;
+
+            if (total > 0 && revealed === total) {
+                showToast("🎉 모든 단어를 확인했습니다! 수고하셨습니다!", "success");
+            }
+        }
+
+        function playTTS(text) {
+            if (!('speechSynthesis' in window)) {
+                showToast("현재 브라우저는 음성 재생(TTS)을 지원하지 않습니다.", "error");
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85;
+
+            utterance.onstart = () => {
+                ttsPlayBtn.classList.add('hidden');
+                ttsStopBtn.classList.remove('hidden');
+            };
+
+            utterance.onend = () => {
+                ttsPlayBtn.classList.remove('hidden');
+                ttsStopBtn.classList.add('hidden');
+            };
+
+            utterance.onerror = () => {
+                ttsPlayBtn.classList.remove('hidden');
+                ttsStopBtn.classList.add('hidden');
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function stopTTS() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            ttsPlayBtn.classList.remove('hidden');
+            ttsStopBtn.classList.add('hidden');
+        }
+
+        function saveCustomPassage() {
+            const title = newTitleInput.value.trim();
+            const text = newTextInput.value.trim();
+            const ko = newKoInput.value.trim();
+
+            if (!title || !text) {
+                showToast("제목과 영어 본문 내용을 입력해주세요.", "error");
+                return;
+            }
+
+            const newPassage = {
+                id: 'custom-' + Date.now(),
+                title: title,
+                text: text,
+                ko: ko
+            };
+
+            passages.push(newPassage);
+            localStorage.setItem('passages_v4', JSON.stringify(passages));
+
+            newTitleInput.value = '';
+            newTextInput.value = '';
+            newKoInput.value = '';
+
+            populateTextSelect();
+            renderSavedList();
+
+            currentPassageId = newPassage.id;
+            textSelect.value = newPassage.id;
+            renderStepUI();
+
+            showToast("새 지문이 추가되었습니다!", "success");
+            navPracticeBtn.click();
+        }
+
+        function deletePassage(id) {
+            if (passages.length <= 1) {
+                showToast("최소 하나의 지문은 남아있어야 합니다.", "error");
+                return;
+            }
+
+            passages = passages.filter(p => p.id !== id);
+            localStorage.setItem('passages_v4', JSON.stringify(passages));
+
+            if (currentPassageId === id) {
+                currentPassageId = passages[0].id;
+            }
+
+            populateTextSelect();
+            renderSavedList();
+            renderStepUI();
+            showToast("지문이 삭제되었습니다.", "info");
+        }
+
+        function populateTextSelect() {
+            textSelect.innerHTML = '';
+            passages.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.title;
+                if (p.id === currentPassageId) opt.selected = true;
+                textSelect.appendChild(opt);
+            });
+        }
+
+        function renderSavedList() {
+            savedList.innerHTML = '';
+            passages.forEach(p => {
+                const item = document.createElement('div');
+                item.className = "py-3 flex items-center justify-between gap-3";
+                item.innerHTML = `
+                    <div class="overflow-hidden">
+                        <h4 class="font-bold text-slate-800 text-sm truncate">${p.title}</h4>
+                        <p class="text-xs text-slate-400 truncate">${p.text.substring(0, 60)}...</p>
+                    </div>
+                    <button class="delete-btn text-rose-500 hover:text-rose-700 active:scale-95 p-2 text-sm transition flex-shrink-0" title="지문 삭제">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                `;
+
+                item.querySelector('.delete-btn').addEventListener('click', () => deletePassage(p.id));
+                savedList.appendChild(item);
+            });
+        }
+
+        function showToast(msg, type = "info") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = msg;
+
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === "error") {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-rose-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-indigo-400";
+            }
+
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-10');
+            }, 3000);
+        }
+
+        function setupEventListeners() {
+            navPracticeBtn.addEventListener('click', () => {
+                practiceView.classList.remove('hidden');
+                manageView.classList.add('hidden');
+                navPracticeBtn.className = "px-3 py-1.5 rounded-lg bg-indigo-700 font-medium text-xs sm:text-sm transition flex items-center gap-1";
+                navManageBtn.className = "px-3 py-1.5 rounded-lg bg-indigo-500/80 hover:bg-indigo-500 font-medium text-xs sm:text-sm transition flex items-center gap-1";
+            });
+
+            navManageBtn.addEventListener('click', () => {
+                practiceView.classList.add('hidden');
+                manageView.classList.remove('hidden');
+                navManageBtn.className = "px-3 py-1.5 rounded-lg bg-indigo-700 font-medium text-xs sm:text-sm transition flex items-center gap-1";
+                navPracticeBtn.className = "px-3 py-1.5 rounded-lg bg-indigo-500/80 hover:bg-indigo-500 font-medium text-xs sm:text-sm transition flex items-center gap-1";
+            });
+
+            textSelect.addEventListener('change', (e) => {
+                currentPassageId = e.target.value;
+                renderStepUI();
+            });
+
+            step1Btn.addEventListener('click', () => setStep(1));
+            step2Btn.addEventListener('click', () => setStep(2));
+            step3Btn.addEventListener('click', () => setStep(3));
+
+            revealAllBtn.addEventListener('click', revealAllBlanks);
+            resetBlanksBtn.addEventListener('click', () => {
+                renderStepUI();
+                showToast("빈칸이 다시 가려졌습니다.", "info");
+            });
+
+            ttsPlayBtn.addEventListener('click', () => {
+                const passage = passages.find(p => p.id === currentPassageId);
+                if (passage) playTTS(passage.text);
+            });
+
+            ttsStopBtn.addEventListener('click', stopTTS);
+            saveTextBtn.addEventListener('click', saveCustomPassage);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
